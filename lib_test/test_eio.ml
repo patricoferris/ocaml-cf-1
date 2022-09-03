@@ -90,24 +90,24 @@ module CFRunLoop = struct
     Cf.RunLoop.stop rl;
     Cf.RunLoop.release rl
 
-  let observe_empty_thread () =
+  let observe_empty_thread ~mgr () =
     let callback _activity =
       Alcotest.fail "secondary runloop with only observer should never fire"
     in
     let obs = Observer.(create Activity.All callback) in
-    let _runloop =
-      Cf_eio.RunLoop.run_thread (fun runloop ->
+    let _runloop : t =
+      Cf_eio.RunLoop.run_thread ~mgr (fun runloop ->
           Cf.RunLoop.add_observer runloop obs Mode.Default)
     in
     ()
 
-  let observe_empty_thread_in_mode () =
+  let observe_empty_thread_in_mode ~mgr () =
     let callback _activity =
       Alcotest.fail "secondary runloop with only observer should never fire"
     in
     let obs = Observer.(create Activity.All callback) in
-    let _runloop =
-      Cf_eio.RunLoop.run_thread_in_mode Mode.Default
+    let _runloop : t =
+      Cf_eio.RunLoop.run_thread_in_mode ~mgr Mode.Default
         (fun runloop -> add_observer runloop obs Mode.Default)
         (fun result ->
           Alcotest.(check run_result)
@@ -116,19 +116,22 @@ module CFRunLoop = struct
     in
     ()
 
-  let tests =
+  let tests ~mgr =
     [
       ("observe_empty", `Quick, observe_empty);
-      ("observe_empty_thread", `Quick, observe_empty_thread);
-      ("observe_empty_thread_in_mode", `Quick, observe_empty_thread_in_mode);
+      ("observe_empty_thread", `Quick, observe_empty_thread ~mgr);
+      ("observe_empty_thread_in_mode", `Quick, observe_empty_thread_in_mode ~mgr);
     ]
 end
 
-let tests =
+let tests ~mgr =
   [
     ("CFString", CFString.tests);
     ("CFArray", CFArray.tests);
-    ("CFRunLoop", CFRunLoop.tests);
+    ("CFRunLoop", CFRunLoop.tests ~mgr);
   ]
 
-let () = Eio_main.run @@ fun _env -> Alcotest.run "CoreFoundation" tests
+let () =
+  Eio_main.run @@ fun env ->
+  let mgr = Eio.Stdenv.domain_mgr env in
+  Alcotest.run "CoreFoundation" (tests ~mgr)

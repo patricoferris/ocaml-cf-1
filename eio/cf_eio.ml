@@ -17,21 +17,17 @@
 open Eio
 
 module RunLoop = struct
-
   (* The spin-thread function runs [f] in a system thread
      to make it non-blocking, but this could perform effects
      so we need to install a handler into that call. *)
-  let spin_thread f x =
+  let spin_thread ~mgr f x =
     let stream = Stream.create max_int in
     let return x = Stream.add stream x in
-    let () =
-      Eio_unix.run_in_systhread (fun () ->
-          Eio_main.run @@ fun _env -> f return x)
-    in
+    let () = Eio.Domain_manager.run mgr (fun () -> f return x) in
     Stream.take stream
 
-  let runloop_thread setup run =
-    spin_thread
+  let runloop_thread ~mgr setup run =
+    spin_thread ~mgr
       (fun return () ->
         let runloop =
           try Cf.RunLoop.get_current ()
@@ -58,13 +54,13 @@ module RunLoop = struct
         Cf.RunLoop.release runloop)
       ()
 
-  let run_thread setup = runloop_thread setup Cf.RunLoop.run
+  let run_thread ~mgr setup = runloop_thread ~mgr setup Cf.RunLoop.run
 
-  let run_thread_in_mode ?return_after_source_handled ?seconds mode setup after
-      =
-    runloop_thread setup (fun () ->
+  let run_thread_in_mode ?return_after_source_handled ?seconds ~mgr mode setup
+      after =
+    runloop_thread ~mgr setup (fun () ->
         let result =
           Cf.RunLoop.run_in_mode ?return_after_source_handled ?seconds mode
         in
-        Eio_unix.run_in_systhread (fun () -> after result))
+        Eio.Domain_manager.run mgr (fun () -> after result))
 end

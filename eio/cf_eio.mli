@@ -16,11 +16,13 @@
  *)
 
 module RunLoop : sig
-  val run_thread : (Cf.RunLoop.t -> unit) -> Cf.RunLoop.t
+  val run_thread :
+    mgr:Eio.Domain_manager.t -> (Cf.RunLoop.t -> unit) -> Cf.RunLoop.t
 
   val run_thread_in_mode :
     ?return_after_source_handled:bool ->
     ?seconds:float ->
+    mgr:Eio.Domain_manager.t ->
     Cf.RunLoop.Mode.t ->
     (Cf.RunLoop.t -> unit) ->
     (Cf.RunLoop.RunResult.t -> unit) ->
