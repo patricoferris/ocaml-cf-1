@@ -28,3 +28,13 @@ for type-safe stub generation.")
   (cf (= :version))
   (alcotest :with-test)
   (lwt (>= "3.2.0"))))
+
+(package
+ (name cf-eio)
+ (synopsis "Eio interface to macOS CoreFoundation")
+ (description "An Eio interface to the macOS CoreFoundation library, using the
+`cf` library for the low-level bindings.")
+ (depends
+  (cf (= :version))
+  (alcotest :with-test)
+  (eio (>= "0.5.0"))))

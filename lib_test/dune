@@ -1,13 +1,23 @@
 (executable
  (name test)
+ (modules test)
  (enabled_if
   (= %{system} macosx))
  (libraries lwt.unix alcotest cf cf-lwt))
+
+(executable
+ (name test_eio)
+ (modules test_eio)
+ (enabled_if
+  (= %{system} macosx))
+ (libraries eio_main alcotest cf cf-eio))
 
 (rule
  (enabled_if
   (= %{system} macosx))
  (alias runtest)
  (action
-  (run ./test.exe))
+  (progn
+   (run ./test.exe)
+   (run ./test_eio.exe)))
  (package cf-lwt))
